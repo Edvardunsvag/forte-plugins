@@ -19,6 +19,12 @@ export interface FlowcaseCv {
   key_qualifications: KeyQualification[];
   technologies: Technology[];
   project_experiences: ProjectExperience[];
+  work_experiences: WorkExperience[];
+  educations: Education[];
+  certifications: Certification[];
+  courses: Course[];
+  languages: Language[];
+  cv_roles: CvRole[];
 }
 
 export interface KeyQualification {
@@ -56,6 +62,55 @@ export interface Role {
 
 export interface ProjectSkill {
   tags: MultiLang | null;
+}
+
+export interface WorkExperience {
+  employer: MultiLang | null;
+  description: MultiLang | null;
+  long_description: MultiLang | null;
+  month_from: number | null;
+  year_from: number | null;
+  month_to: number | null;
+  year_to: number | null;
+}
+
+export interface Education {
+  school: MultiLang | null;
+  degree: MultiLang | null;
+  description: MultiLang | null;
+  month_from: number | null;
+  year_from: number | null;
+  month_to: number | null;
+  year_to: number | null;
+}
+
+export interface Certification {
+  name: MultiLang | null;
+  organiser: MultiLang | null;
+  long_description: MultiLang | null;
+  year: number | null;
+  month: number | null;
+  year_expire: number | null;
+  month_expire: number | null;
+}
+
+export interface Course {
+  name: MultiLang | null;
+  program: MultiLang | null;
+  long_description: MultiLang | null;
+  year: number | null;
+  month: number | null;
+}
+
+export interface Language {
+  name: MultiLang | null;
+  level: MultiLang | null;
+}
+
+export interface CvRole {
+  name: MultiLang | null;
+  long_description: MultiLang | null;
+  years_of_experience: number | null;
 }
 
 interface FlowcaseCountry {
