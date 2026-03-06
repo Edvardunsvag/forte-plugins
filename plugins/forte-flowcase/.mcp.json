@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "forte-flowcase": {
+      "command": "node",
+      "args": ["${PLUGIN_DIR}/dist/server.js"],
+      "env": {
+        "FLOWCASE_ENDPOINT": "",
+        "FLOWCASE_TOKEN": ""
+      }
+    }
+  }
+}
