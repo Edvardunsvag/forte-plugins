@@ -1,6 +1,6 @@
-# Forte Design — Claude Code Plugin Marketplace
+# Forte Plugins — Claude Code Plugin Marketplace
 
-A Claude Code plugin marketplace providing the Forte Digital brand design system.
+A multi-plugin Claude Code marketplace by Forte Digital, providing design system tools, Flowcase integration, and more.
 
 ## Installation
 

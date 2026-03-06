@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "forte-design",
-  "description": "Forte Digital brand design system for HTML presentations, reports, and documents",
+  "name": "forte-plugins",
+  "description": "Forte Digital plugins for Claude Code — design system, Flowcase integration, and more",
   "owner": {
     "name": "Edvard Unsvag"
   },
