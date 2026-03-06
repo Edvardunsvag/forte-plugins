@@ -71,12 +71,58 @@ function formatCv(cv: FlowcaseCv): string {
     (kq) => getPreferred(kq.long_description) || getPreferred(kq.tag_line)
   );
 
+  const workExperiences = (cv.work_experiences ?? []).map((w) => ({
+    employer: getPreferred(w.employer),
+    description: getPreferred(w.description),
+    longDescription: getPreferred(w.long_description),
+    dateFrom: w.year_from ? `${w.month_from ?? "?"}/${w.year_from}` : null,
+    dateTo: w.year_to ? `${w.month_to ?? "?"}/${w.year_to}` : "ongoing",
+  }));
+
+  const educations = (cv.educations ?? []).map((e) => ({
+    school: getPreferred(e.school),
+    degree: getPreferred(e.degree),
+    description: getPreferred(e.description),
+    dateFrom: e.year_from ? `${e.month_from ?? "?"}/${e.year_from}` : null,
+    dateTo: e.year_to ? `${e.month_to ?? "?"}/${e.year_to}` : null,
+  }));
+
+  const certifications = (cv.certifications ?? []).map((c) => ({
+    name: getPreferred(c.name),
+    organiser: getPreferred(c.organiser),
+    date: c.year ? `${c.month ?? "?"}/${c.year}` : null,
+    expires: c.year_expire ? `${c.month_expire ?? "?"}/${c.year_expire}` : null,
+  }));
+
+  const courses = (cv.courses ?? []).map((c) => ({
+    name: getPreferred(c.name),
+    program: getPreferred(c.program),
+    date: c.year ? `${c.month ?? "?"}/${c.year}` : null,
+  }));
+
+  const languages = (cv.languages ?? []).map((l) => ({
+    name: getPreferred(l.name),
+    level: getPreferred(l.level),
+  }));
+
+  const roles = (cv.cv_roles ?? []).map((r) => ({
+    name: getPreferred(r.name),
+    description: getPreferred(r.long_description),
+    yearsOfExperience: r.years_of_experience,
+  }));
+
   return JSON.stringify(
     {
       title: getPreferred(cv.title),
       keyQualifications: qualifications,
       skills,
       projects,
+      workExperiences,
+      educations,
+      certifications,
+      courses,
+      languages,
+      roles,
     },
     null,
     2
