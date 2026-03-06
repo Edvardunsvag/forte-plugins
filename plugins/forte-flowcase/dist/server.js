@@ -34,20 +34,20 @@ server.tool("flowcase_list_consultants", "List all consultants from Flowcase wit
 });
 // --- Helper: format CV for output ---
 function formatCv(cv) {
-    const skills = cv.technologies.flatMap((t) => t.technology_skills.map((s) => ({
+    const skills = (cv.technologies ?? []).flatMap((t) => (t.technology_skills ?? []).map((s) => ({
         name: getPreferred(s.tags),
         years: s.total_duration_in_years,
     })));
-    const projects = cv.project_experiences.map((p) => ({
+    const projects = (cv.project_experiences ?? []).map((p) => ({
         customer: getPreferred(p.customer),
         description: getPreferred(p.description),
         longDescription: getPreferred(p.long_description),
         dateFrom: p.year_from ? `${p.month_from ?? "?"}/${p.year_from}` : null,
         dateTo: p.year_to ? `${p.month_to ?? "?"}/${p.year_to}` : "ongoing",
-        roles: p.roles.map((r) => getPreferred(r.name)),
-        skills: p.project_experience_skills.map((s) => getPreferred(s.tags)),
+        roles: (p.roles ?? []).map((r) => getPreferred(r.name)),
+        skills: (p.project_experience_skills ?? []).map((s) => getPreferred(s.tags)),
     }));
-    const qualifications = cv.key_qualifications.map((kq) => getPreferred(kq.long_description) || getPreferred(kq.tag_line));
+    const qualifications = (cv.key_qualifications ?? []).map((kq) => getPreferred(kq.long_description) || getPreferred(kq.tag_line));
     return JSON.stringify({
         title: getPreferred(cv.title),
         keyQualifications: qualifications,
@@ -69,18 +69,18 @@ server.tool("flowcase_get_projects", "Get only the project experiences for a con
     cvId: z.string().describe("CV ID (use default_cv_id from list_consultants)"),
 }, async ({ userId, cvId }) => {
     const cv = await client.getCv(userId, cvId);
-    const projects = cv.project_experiences.map((p) => ({
+    const projects = (cv.project_experiences ?? []).map((p) => ({
         customer: getPreferred(p.customer),
         description: getPreferred(p.description),
         longDescription: getPreferred(p.long_description),
         customerValueProposition: getPreferred(p.customer_value_proposition),
         dateFrom: p.year_from ? `${p.month_from ?? "?"}/${p.year_from}` : null,
         dateTo: p.year_to ? `${p.month_to ?? "?"}/${p.year_to}` : "ongoing",
-        roles: p.roles.map((r) => ({
+        roles: (p.roles ?? []).map((r) => ({
             name: getPreferred(r.name),
             description: getPreferred(r.long_description),
         })),
-        skills: p.project_experience_skills.map((s) => getPreferred(s.tags)),
+        skills: (p.project_experience_skills ?? []).map((s) => getPreferred(s.tags)),
     }));
     return {
         content: [{ type: "text", text: JSON.stringify(projects, null, 2) }],
@@ -99,7 +99,7 @@ server.tool("flowcase_search_by_skill", "Find consultants who have a specific sk
             continue;
         try {
             const cv = await client.getCv(user.user_id, user.default_cv_id);
-            const matchedSkills = cv.technologies.flatMap((t) => t.technology_skills
+            const matchedSkills = (cv.technologies ?? []).flatMap((t) => (t.technology_skills ?? [])
                 .filter((s) => getPreferred(s.tags).toLowerCase().includes(skillLower))
                 .map((s) => ({
                 name: getPreferred(s.tags),
