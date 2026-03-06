@@ -1,39 +1,20 @@
-# Forte Design Plugin
+# Forte Design — Claude Code Plugin Marketplace
 
-A Claude Code plugin that provides the Forte Digital brand design system for generating HTML presentations, reports, and other documents.
-
-## Features
-
-- **Skill: `forte-design`** — Automatically activates when creating HTML documents, providing Forte brand colors, typography, and component library
-- **Command: `/forte-presentation <topic>`** — Generates a complete HTML slide deck with Forte branding
+A Claude Code plugin marketplace providing the Forte Digital brand design system.
 
 ## Installation
 
 ```
-/plugins install edvardunsvag/forte-design
+/plugin marketplace add Edvardunsvag/forte-design
+/plugin install forte-design@forte-design
 ```
 
-## Design System
+## Plugins
 
-The plugin includes:
-- **Design tokens** — Forte brand colors (burgundy, plum, cream, etc.), typography, spacing
-- **CSS components** — Cards, badges, grids, flow diagrams, tables, charts, mockups, and more
-- **Slide deck template** — Full-screen presentation with keyboard/swipe navigation and progress bar
+### forte-design
+Forte Digital brand design system for HTML presentations, reports, and documents.
 
-## Usage
+- **Skill: `forte-design`** — Auto-activates when creating HTML documents
+- **Command: `/forte-presentation <topic>`** — Generates a Forte-branded slide deck
 
-### Automatic (skill)
-The `forte-design` skill activates automatically when you ask Claude to create HTML presentations, reports, or documents. It ensures all output follows the Forte brand guidelines.
-
-### Explicit (command)
-```
-/forte-presentation AI-drevet matching av konsulenter
-```
-Generates a slide deck on the given topic and opens it in your browser.
-
-## Document Types
-
-- **Slide decks** — Full-screen presentations with navigation
-- **Reports** — Single-page HTML documents with Forte styling
-- **One-pagers** — Condensed overview documents
-- **Technical deep-dives** — Feature documentation with diagrams
+See [plugins/forte-design/README.md](plugins/forte-design/README.md) for full documentation.

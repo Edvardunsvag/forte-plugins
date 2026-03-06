@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "forte-design",
+  "description": "Forte Digital brand design system for HTML presentations, reports, and documents",
+  "owner": {
+    "name": "Edvard Unsvag"
+  },
+  "plugins": [
+    {
+      "name": "forte-design",
+      "description": "Forte Digital brand design system for HTML presentations, reports, and documents. Includes a skill that auto-activates for HTML document generation and a /forte-presentation command for slide decks.",
+      "author": {
+        "name": "Edvard Unsvag"
+      },
+      "source": "./plugins/forte-design",
+      "category": "development"
+    }
+  ]
+}
