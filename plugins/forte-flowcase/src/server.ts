@@ -1,20 +1,21 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { writeFileSync } from "fs";
 import {
   FlowcaseClient,
   getPreferred,
+  SESSION_FILE_PATH,
   type FlowcaseCv,
+  type SessionFile,
 } from "./flowcase-client.js";
 
-// Validate env vars
+// Endpoint is required; token is optional if session cookie is available
 const endpoint = process.env.FLOWCASE_ENDPOINT;
-const token = process.env.FLOWCASE_TOKEN;
+const token = process.env.FLOWCASE_TOKEN || null;
 
-if (!endpoint || !token) {
-  console.error(
-    "ERROR: FLOWCASE_ENDPOINT and FLOWCASE_TOKEN environment variables are required."
-  );
+if (!endpoint) {
+  console.error("ERROR: FLOWCASE_ENDPOINT environment variable is required.");
   process.exit(1);
 }
 
@@ -326,6 +327,51 @@ server.tool(
         },
       ],
     };
+  }
+);
+
+// --- Tool 6: Save session cookie ---
+server.tool(
+  "flowcase_save_session",
+  "Save a Flowcase session cookie for cookie-based auth. Use this after capturing the cvpartner.session cookie from a browser login via Playwright.",
+  {
+    cookie: z.string().describe("The cvpartner.session cookie value"),
+    expiresAt: z.string().optional().describe("ISO date when the cookie expires"),
+  },
+  async ({ cookie, expiresAt }) => {
+    const session: SessionFile = {
+      cookie,
+      domain: ".forte.cvpartner.com",
+      savedAt: new Date().toISOString(),
+      expiresAt,
+    };
+    writeFileSync(SESSION_FILE_PATH, JSON.stringify(session, null, 2));
+    client.setSessionCookie(cookie);
+    return {
+      content: [{
+        type: "text" as const,
+        text: `Session cookie saved to ${SESSION_FILE_PATH}. Cookie-based auth is now active.`,
+      }],
+    };
+  }
+);
+
+// --- Tool 7: Auth status ---
+server.tool(
+  "flowcase_auth_status",
+  "Check current Flowcase authentication status - whether using session cookie or API token",
+  {},
+  async () => {
+    let status = "Authentication method: ";
+    try {
+      const users = await client.listConsultants("no");
+      status += users.length > 0
+        ? `OK - found ${users.length} consultants`
+        : "OK but no consultants found";
+    } catch (e: any) {
+      status += `FAILED - ${e.message}`;
+    }
+    return { content: [{ type: "text" as const, text: status }] };
   }
 );
 

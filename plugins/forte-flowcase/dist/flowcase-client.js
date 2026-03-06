@@ -18,20 +18,63 @@ class TtlCache {
     }
 }
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+export const SESSION_FILE_PATH = `${process.env.HOME}/.claude/flowcase-session.json`;
 export class FlowcaseClient {
     endpoint;
     token;
+    sessionCookie = null;
     userCache = new TtlCache();
     cvCache = new TtlCache();
     constructor(endpoint, token) {
         this.endpoint = endpoint.replace(/\/$/, "");
         this.token = token;
+        this.loadSessionCookie();
+    }
+    loadSessionCookie() {
+        try {
+            const fs = require("fs");
+            if (fs.existsSync(SESSION_FILE_PATH)) {
+                const data = JSON.parse(fs.readFileSync(SESSION_FILE_PATH, "utf-8"));
+                if (data.expiresAt && new Date(data.expiresAt) < new Date()) {
+                    console.error("Flowcase session cookie expired, falling back to token");
+                    return;
+                }
+                this.sessionCookie = data.cookie;
+                console.error("Loaded Flowcase session cookie from file");
+            }
+        }
+        catch {
+            // Ignore - will fall back to token
+        }
+    }
+    setSessionCookie(cookie) {
+        this.sessionCookie = cookie;
+    }
+    getAuthHeaders() {
+        if (this.sessionCookie) {
+            return { Cookie: `cvpartner.session=${this.sessionCookie}` };
+        }
+        if (this.token) {
+            return { Authorization: `Bearer ${this.token}` };
+        }
+        throw new Error("No auth available: no session cookie or API token configured");
     }
     async fetch(path) {
         const res = await fetch(`${this.endpoint}/${path}`, {
-            headers: { Authorization: `Bearer ${this.token}` },
+            headers: this.getAuthHeaders(),
         });
         if (!res.ok) {
+            if (this.sessionCookie && this.token && res.status === 401) {
+                console.error("Session cookie auth failed, falling back to Bearer token");
+                this.sessionCookie = null;
+                const retry = await fetch(`${this.endpoint}/${path}`, {
+                    headers: { Authorization: `Bearer ${this.token}` },
+                });
+                if (!retry.ok) {
+                    throw new Error(`Flowcase API ${retry.status}: ${retry.statusText} (${path})`);
+                }
+                return retry.json();
+            }
             throw new Error(`Flowcase API ${res.status}: ${res.statusText} (${path})`);
         }
         return res.json();

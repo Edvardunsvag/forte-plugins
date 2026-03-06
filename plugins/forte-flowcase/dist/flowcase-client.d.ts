@@ -98,12 +98,23 @@ export interface CvRole {
     years_of_experience: number | null;
 }
 export declare function getPreferred(ml: MultiLang | null | undefined): string;
+export interface SessionFile {
+    cookie: string;
+    domain: string;
+    savedAt: string;
+    expiresAt?: string;
+}
+export declare const SESSION_FILE_PATH: string;
 export declare class FlowcaseClient {
     private endpoint;
     private token;
+    private sessionCookie;
     private userCache;
     private cvCache;
-    constructor(endpoint: string, token: string);
+    constructor(endpoint: string, token: string | null);
+    private loadSessionCookie;
+    setSessionCookie(cookie: string): void;
+    private getAuthHeaders;
     private fetch;
     getOfficeIds(countryCode: string): Promise<string[]>;
     listConsultants(countryCode?: string): Promise<FlowcaseUser[]>;

@@ -150,22 +150,75 @@ class TtlCache<T> {
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+export interface SessionFile {
+  cookie: string;
+  domain: string;
+  savedAt: string;
+  expiresAt?: string;
+}
+
+export const SESSION_FILE_PATH = `${process.env.HOME}/.claude/flowcase-session.json`;
+
 export class FlowcaseClient {
   private endpoint: string;
-  private token: string;
+  private token: string | null;
+  private sessionCookie: string | null = null;
   private userCache = new TtlCache<FlowcaseUser[]>();
   private cvCache = new TtlCache<FlowcaseCv>();
 
-  constructor(endpoint: string, token: string) {
+  constructor(endpoint: string, token: string | null) {
     this.endpoint = endpoint.replace(/\/$/, "");
     this.token = token;
+    this.loadSessionCookie();
+  }
+
+  private loadSessionCookie(): void {
+    try {
+      const fs = require("fs");
+      if (fs.existsSync(SESSION_FILE_PATH)) {
+        const data: SessionFile = JSON.parse(fs.readFileSync(SESSION_FILE_PATH, "utf-8"));
+        if (data.expiresAt && new Date(data.expiresAt) < new Date()) {
+          console.error("Flowcase session cookie expired, falling back to token");
+          return;
+        }
+        this.sessionCookie = data.cookie;
+        console.error("Loaded Flowcase session cookie from file");
+      }
+    } catch {
+      // Ignore - will fall back to token
+    }
+  }
+
+  setSessionCookie(cookie: string): void {
+    this.sessionCookie = cookie;
+  }
+
+  private getAuthHeaders(): Record<string, string> {
+    if (this.sessionCookie) {
+      return { Cookie: `cvpartner.session=${this.sessionCookie}` };
+    }
+    if (this.token) {
+      return { Authorization: `Bearer ${this.token}` };
+    }
+    throw new Error("No auth available: no session cookie or API token configured");
   }
 
   private async fetch<T>(path: string): Promise<T> {
     const res = await fetch(`${this.endpoint}/${path}`, {
-      headers: { Authorization: `Bearer ${this.token}` },
+      headers: this.getAuthHeaders(),
     });
     if (!res.ok) {
+      if (this.sessionCookie && this.token && res.status === 401) {
+        console.error("Session cookie auth failed, falling back to Bearer token");
+        this.sessionCookie = null;
+        const retry = await fetch(`${this.endpoint}/${path}`, {
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+        if (!retry.ok) {
+          throw new Error(`Flowcase API ${retry.status}: ${retry.statusText} (${path})`);
+        }
+        return retry.json() as Promise<T>;
+      }
       throw new Error(`Flowcase API ${res.status}: ${res.statusText} (${path})`);
     }
     return res.json() as Promise<T>;
