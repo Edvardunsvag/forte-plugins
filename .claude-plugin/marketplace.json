@@ -8,11 +8,20 @@
   "plugins": [
     {
       "name": "forte-design",
-      "description": "Forte Digital brand design system for HTML presentations, reports, and documents. Includes a skill that auto-activates for HTML document generation and a /forte-presentation command for slide decks.",
+      "description": "Forte Digital brand design system for HTML presentations, reports, and documents.",
       "author": {
         "name": "Edvard Unsvag"
       },
       "source": "./plugins/forte-design",
+      "category": "development"
+    },
+    {
+      "name": "forte-flowcase",
+      "description": "Flowcase CV data integration — look up consultants, CVs, projects, and skills via MCP tools.",
+      "author": {
+        "name": "Edvard Unsvag"
+      },
+      "source": "./plugins/forte-flowcase",
       "category": "development"
     }
   ]
