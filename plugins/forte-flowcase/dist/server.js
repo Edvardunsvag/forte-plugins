@@ -48,11 +48,51 @@ function formatCv(cv) {
         skills: (p.project_experience_skills ?? []).map((s) => getPreferred(s.tags)),
     }));
     const qualifications = (cv.key_qualifications ?? []).map((kq) => getPreferred(kq.long_description) || getPreferred(kq.tag_line));
+    const workExperiences = (cv.work_experiences ?? []).map((w) => ({
+        employer: getPreferred(w.employer),
+        description: getPreferred(w.description),
+        longDescription: getPreferred(w.long_description),
+        dateFrom: w.year_from ? `${w.month_from ?? "?"}/${w.year_from}` : null,
+        dateTo: w.year_to ? `${w.month_to ?? "?"}/${w.year_to}` : "ongoing",
+    }));
+    const educations = (cv.educations ?? []).map((e) => ({
+        school: getPreferred(e.school),
+        degree: getPreferred(e.degree),
+        description: getPreferred(e.description),
+        dateFrom: e.year_from ? `${e.month_from ?? "?"}/${e.year_from}` : null,
+        dateTo: e.year_to ? `${e.month_to ?? "?"}/${e.year_to}` : null,
+    }));
+    const certifications = (cv.certifications ?? []).map((c) => ({
+        name: getPreferred(c.name),
+        organiser: getPreferred(c.organiser),
+        date: c.year ? `${c.month ?? "?"}/${c.year}` : null,
+        expires: c.year_expire ? `${c.month_expire ?? "?"}/${c.year_expire}` : null,
+    }));
+    const courses = (cv.courses ?? []).map((c) => ({
+        name: getPreferred(c.name),
+        program: getPreferred(c.program),
+        date: c.year ? `${c.month ?? "?"}/${c.year}` : null,
+    }));
+    const languages = (cv.languages ?? []).map((l) => ({
+        name: getPreferred(l.name),
+        level: getPreferred(l.level),
+    }));
+    const roles = (cv.cv_roles ?? []).map((r) => ({
+        name: getPreferred(r.name),
+        description: getPreferred(r.long_description),
+        yearsOfExperience: r.years_of_experience,
+    }));
     return JSON.stringify({
         title: getPreferred(cv.title),
         keyQualifications: qualifications,
         skills,
         projects,
+        workExperiences,
+        educations,
+        certifications,
+        courses,
+        languages,
+        roles,
     }, null, 2);
 }
 // --- Tool 2: Get full CV ---
@@ -125,6 +165,80 @@ server.tool("flowcase_search_by_skill", "Find consultants who have a specific sk
                 text: matches.length > 0
                     ? JSON.stringify(matches, null, 2)
                     : `No consultants found with skill matching "${skill}"`,
+            },
+        ],
+    };
+});
+// --- Tool 5: Search across skills, projects, and customers ---
+server.tool("flowcase_search", "Search for consultants by keyword across skills, project customers, project descriptions, and roles. Case-insensitive partial match.", {
+    query: z.string().describe("Search keyword (case-insensitive partial match across skills, customers, project descriptions, roles)"),
+    countryCode: z.string().optional().default("no").describe("Country code (default: no)"),
+}, async ({ query, countryCode }) => {
+    const users = await client.listConsultants(countryCode);
+    const queryLower = query.toLowerCase();
+    const matches = [];
+    for (const user of users) {
+        if (!user.default_cv_id)
+            continue;
+        try {
+            const cv = await client.getCv(user.user_id, user.default_cv_id);
+            // Search skills
+            const matchedSkills = (cv.technologies ?? []).flatMap((t) => (t.technology_skills ?? [])
+                .filter((s) => getPreferred(s.tags).toLowerCase().includes(queryLower))
+                .map((s) => ({
+                name: getPreferred(s.tags),
+                years: s.total_duration_in_years,
+            })));
+            // Search projects (customer, description, long_description, roles)
+            const matchedProjects = (cv.project_experiences ?? [])
+                .map((p) => {
+                const customer = getPreferred(p.customer);
+                const description = getPreferred(p.description);
+                const longDesc = getPreferred(p.long_description);
+                const roleNames = (p.roles ?? []).map((r) => getPreferred(r.name)).join(" ");
+                const matchedIn = [];
+                if (customer.toLowerCase().includes(queryLower))
+                    matchedIn.push("customer");
+                if (description.toLowerCase().includes(queryLower))
+                    matchedIn.push("title");
+                if (longDesc.toLowerCase().includes(queryLower))
+                    matchedIn.push("description");
+                if (roleNames.toLowerCase().includes(queryLower))
+                    matchedIn.push("role");
+                if (matchedIn.length === 0)
+                    return null;
+                return {
+                    customer,
+                    description,
+                    dateFrom: p.year_from ? `${p.month_from ?? "?"}/${p.year_from}` : null,
+                    dateTo: p.year_to ? `${p.month_to ?? "?"}/${p.year_to}` : "ongoing",
+                    matchedIn,
+                };
+            })
+                .filter((p) => p !== null);
+            if (matchedSkills.length > 0 || matchedProjects.length > 0) {
+                matches.push({
+                    name: user.name,
+                    userId: user.user_id,
+                    office: user.office_name,
+                    matches: {
+                        skills: matchedSkills,
+                        projects: matchedProjects,
+                    },
+                });
+            }
+        }
+        catch {
+            // Skip consultants whose CV can't be fetched
+        }
+    }
+    return {
+        content: [
+            {
+                type: "text",
+                text: matches.length > 0
+                    ? JSON.stringify(matches, null, 2)
+                    : `No consultants found matching "${query}"`,
             },
         ],
     };
